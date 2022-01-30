@@ -169,28 +169,32 @@ market_shares = market_shares.fillna(0)
 
 
 
+# average overall market shares all and indy 
+
+overall_totms = ms_all.apply('mean', axis = 0)
+
+overall_totms_df = pd.DataFrame(overall_ms).reset_index().rename(columns = {0:'market_share'})
+
+
+
+indy = market_shares.drop(columns = ['Marvel', 'DC'])
+ms_indy = indy.apply(lambda x: 100*x/x.sum(), axis = 1)
+overall_indyms = ms_indy.apply('mean', axis = 0)
+
+overall_indyms_df = pd.DataFrame(overall_indyms).reset_index().rename(columns = {0:'market_share'})
 
 
 
 
 
+# pie charts of market share (all and indy subsection)
+
+pie_all = overall_totms_df.plot.pie(y='market_share', ylabel = 'publisher')
+
+pie_indy = overall_indyms_df.plot.pie(y='market_share', ylabel = 'publisher')
 
 
 
-
-pie_msga = msg_all.pie(y='market_share', ylabel = 'publisher')
-
-pie_msgi = msg_indy_r.plot.pie(y='market_share')
-
-
-
-
-
-
-# create pie plots for overall market shares all and indy 
-
-overall_ms = ms_all.apply('mean', axis = 0)
-overall_ms_indy = 
 
 
 # market shares by year trend: all and indy (zoomed in)
@@ -199,23 +203,36 @@ ms_all = market_shares.apply(lambda x: 100*x/x.sum(), axis = 1)
 
 ms_indy = ms_all.drop(columns = ['Marvel', 'DC'])
 
+plot_ms = sns.lineplot(data = ms_all)
+plot_ms_indy = sns.lineplot(data = ms_indy)
 
-# number of books per year - new pivot table? 
+# number of titles by publisher 
 
 tot_titles = pd.pivot_table(data = top_graphics, index = 'year', columns = 'publisher', values = 'trade_paperback_title', aggfunc='count')
+tot_titles = tot_titles.fillna(0)
 
 
+plot_tot_all = sns.lineplot(data=tot_titles)
+plot_tot_indy = sns.lineplot(data=tot_titles.drop(columns = ['Marvel', 'DC']))
 
-# avg. est gross per year (for each publisher)
+
+# avg gross of individual titles by publisher
 
 avg_gross = pd.pivot_table(data = top_graphics, index = 'year', columns = 'publisher', values = 'est_gross', aggfunc = 'mean')
+avg_gross = avg_gross.fillna(0)
+
+plot_avgross = sns.lineplot(data=avg_gross)
 
 
+# violin or box plots of avg. gross by publisher
 
 
-# bubble chart of monthly average number of titles in the top 300 
+violin_gross = sns.violinplot(data = top_graphics, x='publisher', y='est_gross')
+
+# bubble chart of monthly average number of titles in the top 300 for comic books 
  
- top_300 = pd.read_csv('top_300.csv')
+top_300 = pd.read_csv('top_300.csv')
+
 
 
 
