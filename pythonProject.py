@@ -72,22 +72,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-# loading csv files for idividual comic book sales 2009 - 2019
 
-C09 = pd.read_csv('comics_2009.csv')
-C10 = pd.read_csv('comics_2010.csv')
-C11 = pd.read_csv('comics_2011.csv')
-C12 = pd.read_csv('comics_2012.csv')
-C13 = pd.read_csv('comics_2013.csv')
-C14 = pd.read_csv('comics_2014.csv')
-C15 = pd.read_csv('comics_2015.csv')
-C16 = pd.read_csv('comics_2016.csv')
-C17 = pd.read_csv('comics_2017.csv')
-C18 = pd.read_csv('comics_2018.csv')
-C19 = pd.read_csv('comics_2019.csv')
-
-
-# loading csv files for graphic novel sales 2009 - 2019
+# creating database for graphic novel sales 2009 - 2019
 
 G09 = pd.read_csv('graphics_2009.csv')
 G10 = pd.read_csv('graphics_2010.csv')
@@ -101,92 +87,139 @@ G17 = pd.read_csv('graphics_2017.csv')
 G18 = pd.read_csv('graphics_2018.csv')
 G19 = pd.read_csv('graphics_2019.csv')
 
-# adustments for years 2018 and 2019: remove 'On sale' column from comics 
 
-C18 = C18.drop(columns=['On sale'])
-C19 = C19.drop(columns=['On sale'])
-
-# concatinate all years into single dataframe
-
-
-all_comics = [C09, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19]
 all_graphics = [G09, G10, G11, G12, G13, G14, G15, G16, G17, G18, G19]
 
 
-for df in all_comics: 
-	df.columns = ['unit_rank', 'dollar_rank', 'comic_book_title', 'issue', 'price', 'publisher', 'est_units', 'year']
 for df in all_graphics: 
 	df.columns = ['unit_rank', 'dollar_rank', 'trade_paperback_title', 'price', 'publisher', 'est_units', 'year']
-
-
-comics = pd.concat(all_comics).reset_index(drop=True)
 
 graphics = pd.concat(all_graphics).reset_index(drop=True)
 
 
 # cleaning up a bit, need to convert some datatypes: 
-
-comics['est_units'] = comics['est_units'].str.replace(',', '').astype(int)
 graphics['est_units'] = graphics['est_units'].str.replace(',', '').astype(int)
-
-
-comics['price'] = comics['price'].str.replace('$', '').astype(float)
 graphics['price'] = graphics['price'].str.replace('$', '').astype(float)
 
 
-
-# create estimated gross columns: 
-
-comics['est_gross'] = comics['price'] * comics['est_units']
 graphics['est_gross'] = graphics['price'] * graphics['est_units']
 
 
-# looking at market share percentages
+# looking at market share percentages by volume
 
-msc_all = comics.groupby('publisher')[['comic_book_title']].count()/10500
 msg_all = graphics.groupby('publisher')[['trade_paperback_title']].count()/10500
-
-msc_all = msc_all.reset_index().rename(columns={'comic_book_title':'market_share'})
 msg_all = msg_all.reset_index().rename(columns={'trade_paperback_title': 'market_share'})
+
+
+# looking at market share by est_gross 
+
+for df in all_graphics: 
+	df.est_units = df.est_units.str.replace(',', '').astype(int)
+	df.price = df.price.str.replace('$', '').astype(float)
+	df['est_gross'] = df.price * df.est_units
+
+
+
+msg_09 = G09.groupby('publisher')[['est_gross']].sum() / sum(G09.est_gross) * 100
+msg_10 = G10.groupby('publisher')[['est_gross']].sum() / sum(G10.est_gross) * 100
+msg_11 = G11.groupby('publisher')[['est_gross']].sum() / sum(G11.est_gross) * 100
+msg_12 = G12.groupby('publisher')[['est_gross']].sum() / sum(G12.est_gross) * 100
+msg_13 = G13.groupby('publisher')[['est_gross']].sum() / sum(G13.est_gross) * 100
+msg_14 = G14.groupby('publisher')[['est_gross']].sum() / sum(G14.est_gross) * 100
+msg_15 = G15.groupby('publisher')[['est_gross']].sum() / sum(G15.est_gross) * 100
+msg_16 = G16.groupby('publisher')[['est_gross']].sum() / sum(G16.est_gross) * 100
+msg_17 = G17.groupby('publisher')[['est_gross']].sum() / sum(G17.est_gross) * 100
+msg_18 = G18.groupby('publisher')[['est_gross']].sum() / sum(G18.est_gross) * 100
+msg_19 = G19.groupby('publisher')[['est_gross']].sum() / sum(G19.est_gross) * 100
+
+
+msg_years = [msg_09, msg_10, msg_11, msg_12, msg_13, msg_14, msg_15, msg_16, msg_17, msg_18, msg_19]
+
+for df in msg_years: 
+	df = df.reset_index().rename(columns = {'est_gross':'market_share'})
+	
 
 big_pubs = ['Marvel', 'DC']
 
-indie_comics = comics[~comics.publisher.isin(big_pubs)]
-indie_graphics = graphics[~graphics.publisher.isin(big_pubs)]
-
-msc_indy = indie_comics.groupby('publisher')[['comic_book_title']].count()/622
-msg_indy = indie_graphics.groupby('publisher')[['trade_paperback_title']].count()/3896
-
-msc_indy = msc_indy.reset_index().rename(columns={'comic_book_title':'market_share'})
-msg_indy = msg_indy.reset_index().rename(columns={'trade_paperback_title': 'market_share'})
-
-mean_msci = msc_indy.sort_values('comic_book_title').agg(np.mean)
-med_msci = msc_indy.sort_values('comic_book_title').agg(np.median)
-
-
-# the indy graphics table has a lot of noise, let's filter out some outliers
-
-mean_msgi = msg_indy.sort_values('market_share').agg(np.mean)['market_share']
-med_msgi = msg_indy.sort_values('market_share').agg(np.median)['market_share']
-std_msgi = msg_indy.sort_values('market_share').agg(np.std)['market_share']
-
-
-msg_indy_r = msg_indy[msg_indy.market_share > mean_msgi]
-
-
-# create pie plots for market shares all and indy 
-
-# reformat msc_all and msg_all to Marvel, DC, Other
-
-msc_3 = msc_all.
-msg_3 = 
+indie_graphics = top_graphics[~top_graphics.publisher.isin(big_pubs)]
 
 
 
-pie_msca = msc_3.plot.pie(y='market_share', ylabel = 'publisher')
 
-pie_msga = msg_3.plot.pie(y='market_share', ylabel = 'publisher')
+# who are the top sellers: 
 
-pie_msci = msc_indy.plot.pie(y='market_share')
+top_sellers = graphics.groupby('publisher')[['est_gross']].sum().reset_index().sort_values('est_gross', ascending=False)
+
+top_pubs = list(top_sellers.iloc[:14,0])
+
+
+#filter initial table to only include top pubs:
+
+top_graphics = graphics[graphics.publisher.isin(top_pubs)]
+
+
+
+
+
+# create pivot table for market share values by year and publisher
+
+market_shares = pd.pivot_table(data = top_graphics, index = 'year', columns = 'publisher', values = 'est_gross', aggfunc= sum)
+market_shares = market_shares.fillna(0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pie_msga = msg_all.pie(y='market_share', ylabel = 'publisher')
 
 pie_msgi = msg_indy_r.plot.pie(y='market_share')
+
+
+
+
+
+
+# create pie plots for overall market shares all and indy 
+
+overall_ms = ms_all.apply('mean', axis = 0)
+overall_ms_indy = 
+
+
+# market shares by year trend: all and indy (zoomed in)
+
+ms_all = market_shares.apply(lambda x: 100*x/x.sum(), axis = 1)
+
+ms_indy = ms_all.drop(columns = ['Marvel', 'DC'])
+
+
+# number of books per year - new pivot table? 
+
+tot_titles = pd.pivot_table(data = top_graphics, index = 'year', columns = 'publisher', values = 'trade_paperback_title', aggfunc='count')
+
+
+
+# avg. est gross per year (for each publisher)
+
+avg_gross = pd.pivot_table(data = top_graphics, index = 'year', columns = 'publisher', values = 'est_gross', aggfunc = 'mean')
+
+
+
+
+# bubble chart of monthly average number of titles in the top 300 
+ 
+ top_300 = pd.read_csv('top_300.csv')
+
+
+
+
+
+
+
