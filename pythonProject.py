@@ -44,6 +44,9 @@ graphics['price'] = graphics['price'].str.replace('$', '').astype(float)
 graphics['est_gross'] = graphics['price'] * graphics['est_units']
 
 
+# Data Manipulation and EDA:
+
+
 # looking at market share percentages by volume
 
 msg_all = graphics.groupby('publisher')[['trade_paperback_title']].count()/10500
@@ -91,12 +94,13 @@ top_sellers = graphics.groupby('publisher')[['est_gross']].sum().reset_index().s
 
 top_pubs = list(top_sellers.iloc[:14,0])
 
+top_pubs.remove('Archie')	# owned by Warner Bros
+top_pubs.remove('Top Shelf') # now owned by IDW
+
 
 #filter initial table to only include top pubs:
 
 top_graphics = graphics[graphics.publisher.isin(top_pubs)]
-
-
 
 
 
@@ -112,28 +116,23 @@ market_shares = market_shares.fillna(0)
 
 overall_totms = ms_all.apply('mean', axis = 0)
 
-overall_totms_df = pd.DataFrame(overall_ms).reset_index().rename(columns = {0:'market_share'})
+overall_totms_df = pd.DataFrame(overall_totms).reset_index().rename(columns = {0:'market_share'})
+overall_totms_df = overall_totms_df.sort_values('market_share', ascending=False)
+
+# extracted for pie chart (see below)
+
+allms_pubs = ['DC', 'Marvel', 'Image', 'Dark Horse', 'Other']
+allms_pcts = [36, 32, 17, 6, 9]
+explode = (0,0,0,0,0.1)
 
 
-
+# possible subsection / zoom in 
 indy = market_shares.drop(columns = ['Marvel', 'DC'])
 ms_indy = indy.apply(lambda x: 100*x/x.sum(), axis = 1)
 overall_indyms = ms_indy.apply('mean', axis = 0)
 
 overall_indyms_df = pd.DataFrame(overall_indyms).reset_index().rename(columns = {0:'market_share'})
-
-
-
-
-
-# pie charts of market share (all and indy subsection)
-
-pie_all = overall_totms_df.plot.pie(y='market_share', ylabel = 'publisher')
-
-pie_indy = overall_indyms_df.plot.pie(y='market_share', ylabel = 'publisher')
-
-
-
+overall_indyms_df = overall_indyms_df.sort_values('market_share', ascending=False)
 
 
 # market shares by year trend: all and indy (zoomed in)
@@ -142,8 +141,7 @@ ms_all = market_shares.apply(lambda x: 100*x/x.sum(), axis = 1)
 
 ms_indy = ms_all.drop(columns = ['Marvel', 'DC'])
 
-plot_ms = sns.lineplot(data = ms_all)
-plot_ms_indy = sns.lineplot(data = ms_indy)
+
 
 # number of titles by publisher 
 
@@ -151,31 +149,68 @@ tot_titles = pd.pivot_table(data = top_graphics, index = 'year', columns = 'publ
 tot_titles = tot_titles.fillna(0)
 
 
-plot_tot_all = sns.lineplot(data=tot_titles)
-plot_tot_indy = sns.lineplot(data=tot_titles.drop(columns = ['Marvel', 'DC']))
-
 
 # avg gross of individual titles by publisher
 
 avg_gross = pd.pivot_table(data = top_graphics, index = 'year', columns = 'publisher', values = 'est_gross', aggfunc = 'mean')
 avg_gross = avg_gross.fillna(0)
 
+
+
+
+
+
+
+# PLOTS
+
+from matplotlib.colors import ListedColormap
+cmap = ListedColormap(sns.color_palette())
+
+# pie chart of market share 
+
+# all 
+fig1, ax1 = plt.subplots()
+ax1.pie(allms_pcts, explode=explode, labels=allms_pubs, autopct='%1.1f%%',
+        shadow=True, startangle=90)
+ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+ax1.set_title('Market Share')
+
+
+
+# market shares by year (all and indy subsection)
+
+plot_ms = sns.lineplot(data = ms_all)  # ms1
+
+plot_ms_indy = sns.lineplot(data = ms_indy.drop(columns = ['Image', 'Dark Horse']))  #ms2
+
+
+# annual number of titles by publisher by year
+
+plot_tot_all = sns.lineplot(data=tot_titles)
+
+
+ # avg est gross of titles by publisher by year 
+
 plot_avgross = sns.lineplot(data=avg_gross)
 
 
-# violin or box plots of avg. gross by publisher
+# bar plot of avg gross per title 
 
 
-violin_gross = sns.violinplot(data = top_graphics, x='publisher', y='est_gross')
+means_df = pd.DataFrame(top_graphics.groupby('publisher')['est_gross'].mean()).sort_values('est_gross', ascending=False)
+stds_df = pd.DataFrame(top_graphics.groupby('publisher')['est_gross'].std()).sort_values('est_gross', ascending=False)
 
-# bubble chart of monthly average number of titles in the top 300 for comic books 
- 
-top_300 = pd.read_csv('top_300.csv')
-
-
-
+means_df = means_df.rename(columns = {'est_gross' : 'mn_gross'}).reset_index()
+mean_bar = means_df.plot(x='publisher', y='mn_gross', kind='bar', xlabel='Publisher', ylabel='Average Gross Per Title (in Dollars)')
+mean_bar.set_xticklabels(mean_bar.get_xticklabels(), rotation = 30)
 
 
+# violin plot 
 
+violin = sns.violinplot(data = top_graphics, x='publisher', y='est_gross')
+violin.set_xticklabels(violin.get_xticklabels(),rotation = 30)
+violin.set_ylabel('Gross Per Title (in Dollars)')
+violin.set_xlabel('Publisher')
 
 
