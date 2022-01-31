@@ -16,6 +16,8 @@ The question:
 Which titles/collentions might be worth considering for adaptation? Not just based on personal preference, but based on the source material's success in the comic book market.
 
 
+
+
 The Data: 
 
 https://www.comichron.com/monthlycomicssales.html
@@ -25,7 +27,9 @@ Comichron is site maintained by comic-book author John Jackson Miller which comp
 
 Diamond Distributors served as the primary distributor of all physical comic books in North America for several decades.  They have been releasing monthly and yearly reports of the top comic and graphic novel sales for several years which are all available as spreadsheets on Comichron.com 
 
-We took a look at the top 1000 graphic novel sales for the years 2009 - 2019 to take a look at the performance of several publishing houses and their titles. 
+I examined the top 1000 graphic novel sales for the years 2009 - 2019 to take get a better look at the relative performance of several publishing houses and their titles. 
+
+
 
 
 Presentation Slides: 
